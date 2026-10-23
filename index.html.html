@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Appointment Time Converter</title>
+<style>
+:root{--bg:#F1F6FD;--card:#fff;--ink:#0B1B33;--muted:#5B6B82;--brand:#1D4ED8;--accent:#0EA5E9;--line:#D6E2F3;--soft:#EAF2FF;
+--ok:#0F7B45;--okbg:#E4F6EC;--bad:#B42318;--badbg:#FDE8E6;--warn:#8A5A00;--warnbg:#FFF3D6;color-scheme:light;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0A1220;--card:#111C30;--ink:#E6EEFB;--muted:#93A4BF;--brand:#60A5FA;--accent:#38BDF8;--line:#22314D;--soft:#16294A;
+--ok:#4ADE9A;--okbg:#0F2A22;--bad:#F87171;--badbg:#301416;--warn:#FBBF24;--warnbg:#2B2210;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0A1220;--card:#111C30;--ink:#E6EEFB;--muted:#93A4BF;--brand:#60A5FA;--accent:#38BDF8;--line:#22314D;--soft:#16294A;
+--ok:#4ADE9A;--okbg:#0F2A22;--bad:#F87171;--badbg:#301416;--warn:#FBBF24;--warnbg:#2B2210;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:16px}
+header{background:linear-gradient(135deg,#0B1B3F,#1D4ED8 70%,#0EA5E9);color:#fff;border-radius:16px;padding:18px 20px}
+header h1{margin:0 0 4px;font-size:21px}
+header p{margin:0;opacity:.9;font-size:13.5px}
+.now{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px;font-size:13px}
+.pill{background:rgba(255,255,255,.16);padding:4px 10px;border-radius:99px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+input,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:inherit}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 12px;border-radius:99px;font:inherit;font-weight:600;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--brand);color:#fff;border-color:var(--brand)}
+.hint{font-size:12.5px;color:var(--muted);margin:6px 0 0}
+.banner{margin-top:14px;padding:12px 14px;border-radius:12px;font-weight:600;border:1px solid}
+.banner small{display:block;font-weight:400;margin-top:2px}
+.b-ok{background:var(--okbg);color:var(--ok);border-color:var(--ok)}
+.b-bad{background:var(--badbg);color:var(--bad);border-color:var(--bad)}
+.b-warn{background:var(--warnbg);color:var(--warn);border-color:var(--warn)}
+.b-info{background:var(--soft);color:var(--brand);border-color:var(--line)}
+.scroll{overflow-x:auto}
+.tbl{min-width:520px}
+.row{display:grid;grid-template-columns:1.5fr 1.2fr 1fr 1.6fr;gap:8px;align-items:center;padding:10px 8px;border-bottom:1px solid var(--line)}
+.row.head{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.row.sel{background:var(--soft);border-radius:10px}
+.t{font-size:17px;font-weight:700}
+.tag{font-size:11px;background:var(--brand);color:#fff;border-radius:6px;padding:1px 6px;margin-left:6px}
+.s-ok{color:var(--ok);font-weight:600}.s-bad{color:var(--bad);font-weight:600}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+.btn{background:var(--brand);color:#fff;border:0;border-radius:10px;padding:11px 16px;font:inherit;font-weight:700;cursor:pointer}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.shift{font-size:13px;font-weight:600}
+.foot{font-size:12px;color:var(--muted);margin:14px 2px 4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Appointment Time Converter</h1>
+  <p>Enter a time once and see it in every U.S. time zone, checked against calling-hour rules.</p>
+  <div class="now"><span class="pill" id="nowCT">Loading…</span><span class="pill" id="shiftNow"></span></div>
+</header>
+
+<div class="card">
+  <div class="grid">
+    <div><label for="d">Date</label><input type="date" id="d"></div>
+    <div><label for="t">Time</label><input type="time" id="t"></div>
+    <div><label for="z">Time entered in</label><select id="z"></select></div>
+  </div>
+  <div style="margin-top:14px">
+    <label>Lead’s time zone (tap to check the lead)</label>
+    <div class="chips" id="chips"></div>
+    <p class="hint">Your shift: 9:00 AM–6:00 PM Central, Monday–Friday. Tap a zone again to clear it.</p>
+  </div>
+  <div id="banner"></div>
+</div>
+
+<div class="card">
+  <div class="scroll"><div class="tbl" id="tbl"></div></div>
+  <div class="actions">
+    <button class="btn" id="copy">Copy for tracker</button>
+    <span class="shift" id="shift"></span>
+    <span class="hint" id="copied"></span>
+  </div>
+</div>
+
+<p class="foot">Rule applied: telemarketing calls may only be placed between 8:00 AM and 9:00 PM in the lead’s local time (TCPA). Some states are stricter, for example Florida and Oklahoma (8:00 AM–8:00 PM) and Texas on Sundays, so confirm state rules with your compliance team. This tool is a helper, not legal advice.</p>
+</div>
+
+<script>
+var ZONES=[
+ {id:"America/New_York",name:"Eastern",k:"ET"},
+ {id:"America/Chicago",name:"Central",k:"CT"},
+ {id:"America/Denver",name:"Mountain",k:"MT"},
+ {id:"America/Phoenix",name:"Arizona (no DST)",k:"AZ"},
+ {id:"America/Los_Angeles",name:"Pacific",k:"PT"},
+ {id:"America/Anchorage",name:"Alaska",k:"AK"},
+ {id:"Pacific/Honolulu",name:"Hawaii",k:"HI"}
+];
+var CT="America/Chicago", lead=null, last=null;
+var $=function(i){return document.getElementById(i)};
+
+function parts(date,tz){
+  var o={};
+  new Intl.DateTimeFormat("en-US",{timeZone:tz,hourCycle:"h23",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",weekday:"short"})
+   .formatToParts(date).forEach(function(p){o[p.type]=p.value});
+  o.h=+o.hour;o.m=+o.minute;return o;
+}
+function offsetMin(date,tz){
+  var p=parts(date,tz),t=Math.floor(date.getTime()/60000)*60000;
+  return (Date.UTC(+p.year,+p.month-1,+p.day,p.h,p.m)-t)/60000;
+}
+function toUtc(y,mo,d,h,mi,tz){
+  var g=Date.UTC(y,mo-1,d,h,mi),o=offsetMin(new Date(g),tz),u=g-o*60000,o2=offsetMin(new Date(u),tz);
+  if(o2!==o)u=g-o2*60000;return new Date(u);
+}
+function abbr(date,tz){
+  var r="";new Intl.DateTimeFormat("en-US",{timeZone:tz,timeZoneName:"short"}).formatToParts(date).forEach(function(p){if(p.type==="timeZoneName")r=p.value});return r;
+}
+function clock(date,tz){return date.toLocaleTimeString("en-US",{timeZone:tz,hour:"numeric",minute:"2-digit"})}
+function day(date,tz){return date.toLocaleDateString("en-US",{timeZone:tz,weekday:"short",month:"short",day:"numeric"})}
+function inShift(date){var p=parts(date,CT),m=p.h*60+p.m;return ["Mon","Tue","Wed","Thu","Fri"].indexOf(p.weekday)>-1&&m>=540&&m<1080}
+
+function init(){
+  $("z").innerHTML=ZONES.map(function(z){return "<option value=\""+z.id+"\""+(z.id===CT?" selected":"")+">"+z.name+"</option>"}).join("");
+  $("chips").innerHTML=ZONES.map(function(z){return "<button type=\"button\" class=\"chip\" aria-pressed=\"false\" data-id=\""+z.id+"\">"+z.k+"</button>"}).join("");
+  var now=new Date(),p=parts(now,CT),mins=p.h*60+p.m;mins=Math.ceil((mins+1)/30)*30;if(mins>=1440)mins=1410;
+  $("d").value=p.year+"-"+p.month+"-"+p.day;
+  $("t").value=String(Math.floor(mins/60)).padStart(2,"0")+":"+String(mins%60).padStart(2,"0");
+  ["d","t","z"].forEach(function(i){$(i).addEventListener("input",run)});
+  $("chips").addEventListener("click",function(e){
+    var b=e.target.closest(".chip");if(!b)return;
+    lead=(lead===b.dataset.id)?null:b.dataset.id;
+    document.querySelectorAll(".chip").forEach(function(c){c.setAttribute("aria-pressed",c.dataset.id===lead?"true":"false")});run();
+  });
+  $("copy").addEventListener("click",copyIt);
+  tick();setInterval(tick,30000);run();
+}
+function tick(){
+  var n=new Date();$("nowCT").textContent="Now: "+day(n,CT)+", "+clock(n,CT)+" "+abbr(n,CT);
+  $("shiftNow").textContent=inShift(n)?"On shift":"Off shift";
+}
+function banner(cls,msg,sub){$("banner").innerHTML="<div class=\"banner "+cls+"\" role=\"alert\">"+msg+(sub?"<small>"+sub+"</small>":"")+"</div>"}
+
+function run(){
+  var d=$("d").value,t=$("t").value,zid=$("z").value;
+  $("copied").textContent="";
+  if(!d||!t){banner("b-info","Enter a date and a time to convert.");$("tbl").innerHTML="";$("copy").disabled=true;$("shift").textContent="";last=null;return}
+  var dp=d.split("-").map(Number),tp=t.split(":").map(Number);
+  var utc=toUtc(dp[0],dp[1],dp[2],tp[0],tp[1],zid),now=new Date();
+  var past=utc.getTime()<Math.floor(now.getTime()/60000)*60000;
+  var base=day(utc,zid),rows=[],bad=[];
+  ZONES.forEach(function(z){
+    var p=parts(utc,z.id),m=p.h*60+p.m,legal=m>=480&&m<1260,why=m<480?"Before 8:00 AM":"After 9:00 PM";
+    if(!legal)bad.push(z);
+    rows.push({z:z,time:clock(utc,z.id),ab:abbr(utc,z.id),day:day(utc,z.id),legal:legal,why:why});
+  });
+  var html="<div class=\"row head\"><div>Zone</div><div>Local time</div><div>Day</div><div>Calling window</div></div>";
+  rows.forEach(function(r){
+    html+="<div class=\"row"+(r.z.id===lead?" sel":"")+"\"><div>"+r.z.name+(r.z.id===lead?"<span class=\"tag\">Lead</span>":"")+"</div>"
+     +"<div class=\"t\">"+r.time+" <span style=\"font-size:12px;color:var(--muted);font-weight:600\">"+r.ab+"</span></div>"
+     +"<div>"+r.day+(r.day!==base?" ⚑":"")+"</div>"
+     +"<div class=\""+(r.legal?"s-ok":"s-bad")+"\">"+(r.legal?"✓ Allowed":"✕ "+r.why)+"</div></div>";
+  });
+  $("tbl").innerHTML=html;
+  var sh=inShift(utc);
+  $("shift").innerHTML=sh?"<span class=\"s-ok\">Inside your 9–6 CT shift</span>":"<span style=\"color:var(--warn)\">Outside your 9–6 CT shift</span>";
+
+  var err=false;
+  if(past){err=true;banner("b-bad","Error: that time has already passed.","Pick a future date and time.")}
+  else if(lead){
+    var r=rows.filter(function(x){return x.z.id===lead})[0];
+    if(!r.legal){err=true;banner("b-bad","Error: "+r.time+" "+r.ab+" is not allowed for this lead.",r.why+". Calls must fall between 8:00 AM and 9:00 PM in the lead’s local time (TCPA). Choose a different time.")}
+    else banner("b-ok","Good to book: "+r.time+" "+r.ab+" is inside the legal calling window.","Lead’s zone: "+r.z.name+".");
+  } else if(bad.length){
+    banner("b-warn","Not legal in: "+bad.map(function(z){return z.name}).join(", ")+".","Tap the lead’s time zone above to confirm this time works for them.");
+  } else banner("b-ok","Legal in every U.S. time zone.","Tap the lead’s zone to mark it in the tracker.");
+  $("copy").disabled=err;
+  last={rows:rows,zid:zid,utc:utc,base:base};
+}
+function copyIt(){
+  if(!last)return;
+  var L=last,src=L.rows.filter(function(r){return r.z.id===L.zid})[0];
+  var txt=L.base+" | Entered: "+src.time+" "+src.ab+" | "+L.rows.map(function(r){return r.z.k+" "+r.time+" "+r.ab}).join(" | ");
+  if(lead){var l=L.rows.filter(function(r){return r.z.id===lead})[0];txt="Lead zone: "+l.z.name+" "+l.time+" "+l.ab+" | "+txt}
+  var done=function(){$("copied").textContent="Copied"};
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(done,fb)}else fb();
+  function fb(){var a=document.createElement("textarea");a.value=txt;document.body.appendChild(a);a.select();try{document.execCommand("copy");done()}catch(e){$("copied").textContent="Select and copy: "+txt}a.remove()}
+}
+init();
+</script>
+</body>
+</html>
